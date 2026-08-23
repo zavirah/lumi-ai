@@ -19,7 +19,7 @@ function QuestionForm() {
     setLoading(true);
 
     try {
-      const response = await fetch("http://localhost:3001/api/ask", {
+      const response = await fetch("https://lumi-ai-mepd.onrender.com/api/ask", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

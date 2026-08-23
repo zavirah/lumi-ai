@@ -20,7 +20,7 @@ function AIImageGenerator() {
 
     try {
       const response = await fetch(
-        "http://localhost:3001/api/generate-image",
+        "https://lumi-ai-mepd.onrender.com/api/generate-image",
         {
           method: "POST",
           headers: {
