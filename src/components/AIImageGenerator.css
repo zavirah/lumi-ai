@@ -1,0 +1,154 @@
+.image-generator {
+  padding: 100px 7%;
+  background: #fbf8fc;
+}
+
+.image-generator-heading {
+  max-width: 700px;
+  margin: 0 auto 35px;
+  text-align: center;
+}
+
+.image-generator-label {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  color: #a261c5;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.image-generator-heading h2 {
+  margin: 0;
+  color: #292331;
+  font-size: clamp(2rem, 3.5vw, 2.8rem);
+}
+
+.image-generator-heading h2 span {
+  background: linear-gradient(120deg, #c66be5, #9568e7);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.image-generator-heading p {
+  color: #817887;
+  font-size: 0.9rem;
+  line-height: 1.7;
+}
+
+.image-generator-card {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 25px;
+  border: 1px solid #eadfee;
+  border-radius: 26px;
+  background: white;
+  box-shadow: 0 20px 55px rgba(85, 58, 98, 0.08);
+}
+
+.image-generator-input {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px 8px 15px;
+  border: 1px solid #eee5f1;
+  border-radius: 15px;
+  background: #fcfafc;
+}
+
+.image-generator-input > svg {
+  color: #a261c5;
+}
+
+.image-generator-input input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: #49404f;
+  font-size: 0.8rem;
+}
+
+.image-generator-input button {
+  padding: 10px 15px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border: none;
+  border-radius: 11px;
+  color: white;
+  background: linear-gradient(135deg, #c76be5, #9568e7);
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.image-generator-input button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.image-loading {
+  min-height: 250px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #9b61bf;
+}
+
+.image-loading svg {
+  font-size: 2rem;
+  animation: sparkle 1.2s infinite;
+}
+
+.image-loading p {
+  color: #817887;
+  font-size: 0.8rem;
+}
+
+@keyframes sparkle {
+  50% {
+    transform: scale(1.15) rotate(10deg);
+  }
+}
+
+.generated-image {
+  margin-top: 20px;
+  overflow: hidden;
+  border-radius: 18px;
+}
+
+.generated-image img {
+  width: 100%;
+  display: block;
+}
+
+.dark-mode .image-generator {
+  background: #1e1723;
+}
+
+.dark-mode .image-generator-heading h2 {
+  color: #f2e8f4;
+}
+
+.dark-mode .image-generator-heading p {
+  color: #aa9dac;
+}
+
+.dark-mode .image-generator-card {
+  border-color: #44364b;
+  background: #2a202f;
+}
+
+.dark-mode .image-generator-input {
+  border-color: #493a50;
+  background: #251c2b;
+}
+
+.dark-mode .image-generator-input input {
+  color: #e4d9e7;
+}

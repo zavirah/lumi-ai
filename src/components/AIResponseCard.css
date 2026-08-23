@@ -1,0 +1,299 @@
+.response-section {
+  padding: 80px 0 0;
+  background: transparent;
+}
+
+.response-heading {
+  max-width: 1100px;
+  margin: 0 auto 35px;
+}
+
+.response-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  color: #a261c5;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+}
+
+.response-heading h2 {
+  margin: 0;
+  color: #292331;
+  font-size: clamp(2rem, 3.5vw, 2.8rem);
+  letter-spacing: -1.5px;
+}
+
+/* Response card */
+
+.response-card {
+  max-width: 1100px;
+  margin: 0 auto;
+  overflow: hidden;
+  border: 1px solid #eee5f1;
+  border-radius: 26px;
+  background: #fff;
+  box-shadow: 0 20px 55px rgba(85, 58, 98, 0.08);
+}
+
+.response-card-header {
+  padding: 22px 25px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #f0e9f2;
+}
+
+.response-profile {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.response-avatar {
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 13px;
+  color: white;
+  background: linear-gradient(135deg, #c76be5, #9568e7);
+}
+
+.response-profile strong {
+  display: block;
+  color: #43394a;
+  font-size: 0.84rem;
+}
+
+.response-profile span {
+  display: block;
+  margin-top: 3px;
+  color: #a098a5;
+  font-size: 0.64rem;
+}
+
+.response-status {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #9b929f;
+  font-size: 0.64rem;
+}
+
+.response-status > span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #78bf8d;
+}
+
+/* Response body */
+
+.response-body {
+  padding: 30px;
+}
+
+.response-body h3 {
+  margin: 0 0 18px;
+  color: #403747;
+  font-size: 1.15rem;
+}
+
+.response-body > p {
+  max-width: 850px;
+  margin: 0 0 17px;
+  color: #756c7b;
+  font-size: 0.86rem;
+  line-height: 1.85;
+}
+
+/* Tip */
+
+.response-tip {
+  max-width: 850px;
+  margin-top: 27px;
+  padding: 17px;
+  display: flex;
+  gap: 13px;
+  border: 1px solid #eadcf0;
+  border-radius: 16px;
+  background: #fcf7fe;
+}
+
+.tip-icon {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: #f3e5f8;
+}
+
+.response-tip strong {
+  display: block;
+  margin-bottom: 5px;
+  color: #5b4962;
+  font-size: 0.76rem;
+}
+
+.response-tip p {
+  margin: 0;
+  color: #837787;
+  font-size: 0.7rem;
+  line-height: 1.65;
+}
+
+/* Actions */
+
+.response-actions {
+  padding: 17px 25px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid #f0e9f2;
+}
+
+.response-actions > div {
+  display: flex;
+  gap: 6px;
+}
+
+.response-actions button {
+  border: 1px solid #eee5f1;
+  background: white;
+  color: #938996;
+  transition: all 0.3s ease;
+}
+
+.response-actions > div button {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+}
+
+.response-actions button:hover {
+  color: #9c61c0;
+  border-color: #d9bce5;
+  background: #fcf7fe;
+}
+
+.regenerate-button {
+  padding: 9px 13px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border-radius: 10px;
+  font-size: 0.67rem;
+}
+
+@media (max-width: 600px) {
+  .response-section {
+    padding: 80px 5%;
+  }
+
+  .response-card-header {
+    align-items: flex-start;
+    gap: 15px;
+    flex-direction: column;
+  }
+
+  .response-body {
+    padding: 22px;
+  }
+
+  .response-actions {
+    padding: 15px 18px;
+  }
+
+  .response-status {
+    margin-left: 53px;
+  }
+}
+
+/* ============================= */
+/* Dark Mode - AI Response */
+/* ============================= */
+
+.dark-mode .response-section {
+  background: #211925;
+}
+
+.dark-mode .response-label {
+  color: #d39be8;
+}
+
+.dark-mode .response-heading h2 {
+  color: #f2e8f4;
+}
+
+.dark-mode .response-card {
+  border-color: #44364b;
+  background: #2a202f;
+  box-shadow: 0 20px 55px rgba(0, 0, 0, 0.28);
+}
+
+.dark-mode .response-card-header {
+  border-bottom-color: #44364b;
+}
+
+.dark-mode .response-profile strong {
+  color: #eadfec;
+}
+
+.dark-mode .response-profile span {
+  color: #a99baa;
+}
+
+.dark-mode .response-status {
+  color: #a99baa;
+}
+
+.dark-mode .response-body h3 {
+  color: #eadfec;
+}
+
+.dark-mode .response-body > p {
+  color: #afa2b2;
+}
+
+.dark-mode .response-tip {
+  border-color: #4b3a52;
+  background: #34263c;
+}
+
+.dark-mode .tip-icon {
+  background: #43314b;
+}
+
+.dark-mode .response-tip strong {
+  color: #dfd0e2;
+}
+
+.dark-mode .response-tip p {
+  color: #aa9dac;
+}
+
+.dark-mode .response-actions {
+  border-top-color: #44364b;
+}
+
+.dark-mode .response-actions button {
+  border-color: #493a50;
+  background: #33263b;
+  color: #a99baa;
+}
+
+.dark-mode .response-actions button:hover {
+  color: #d39be8;
+  border-color: #765583;
+  background: #3b2b44;
+}
