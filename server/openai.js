@@ -6,7 +6,7 @@ import { GoogleGenAI } from "@google/genai";
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3001;;
+const PORT = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(express.json());
@@ -55,6 +55,7 @@ ${question}`,
 
 /* =========================
    GENERATE LUMI IMAGE
+   POLLINATIONS
 ========================= */
 
 app.post("/api/generate-image", async (req, res) => {
@@ -67,70 +68,41 @@ app.post("/api/generate-image", async (req, res) => {
       });
     }
 
-    console.log("Generating Lumi image...");
+    console.log("Generating Lumi image with Pollinations...");
 
-    const response = await ai.models.generateContent({
-      model: "gemini-3.1-flash-image",
-      contents: `Create a clear educational image for a student.
+    const imageUrl =
+      `https://gen.pollinations.ai/image/${encodeURIComponent(
+        prompt.trim()
+      )}?model=flux`;
 
-${prompt}
-
-Make it clean, accurate, visually helpful, and suitable for studying.`,
-      config: {
-        responseModalities: ["IMAGE"],
-        responseFormat: {
-          image: {
-            aspectRatio: "16:9",
-            imageSize: "1K",
-          },
-        },
+    const response = await fetch(imageUrl, {
+      headers: {
+        Authorization: `Bearer ${process.env.POLLINATIONS_API_KEY}`,
       },
     });
 
-    const parts = response.candidates?.[0]?.content?.parts || [];
+    if (!response.ok) {
+      const errorText = await response.text();
 
-    const imagePart = parts.find(
-      (part) => part.inlineData?.data
-    );
+      console.error(
+        "Pollinations image error:",
+        response.status,
+        errorText
+      );
 
-    if (!imagePart) {
-      console.error("No image returned from Gemini.");
-
-      return res.status(500).json({
-        error: "Lumi did not return an image.",
+      return res.status(response.status).json({
+        error: "Pollinations could not generate the image.",
       });
     }
 
-    const { mimeType, data } = imagePart.inlineData;
-
-    console.log("Lumi image generated successfully.");
+    const imageBuffer = await response.arrayBuffer();
+    const base64Image = Buffer.from(imageBuffer).toString("base64");
 
     res.json({
-      image: `data:${mimeType};base64,${data}`,
+      image: `data:image/jpeg;base64,${base64Image}`,
     });
   } catch (error) {
-    console.error("Gemini image error:", error);
-
-    /*
-      Gemini image generation can return 429 when the
-      project has no available image-generation quota.
-    */
-
-    if (error.status === 429) {
-      return res.status(429).json({
-        error:
-          "Lumi image generation is currently unavailable because the Gemini image quota has been reached.",
-        quota: true,
-      });
-    }
-
-    if (error.status === 503) {
-      return res.status(503).json({
-        error:
-          "Lumi's image service is temporarily busy. Please try again in a moment.",
-        temporary: true,
-      });
-    }
+    console.error("Pollinations image error:", error);
 
     res.status(500).json({
       error: "Lumi could not generate the image. Please try again.",
