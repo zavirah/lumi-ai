@@ -2,8 +2,6 @@ import Navbar from "./components/Navbar";
 import Hero from "./components/Hero";
 import { FeatureCard, features } from "./components/FeatureCard";
 import QuestionForm from "./components/QuestionForm";
-import AIResponseCard from "./components/AIResponseCard";
-import AIImageGenerator from "./components/AIImageGenerator";
 import About from "./components/About";
 import { LuSparkles } from "react-icons/lu";
 
@@ -47,10 +45,6 @@ function App() {
         </section>
 
         <QuestionForm />
-
-        <AIResponseCard />
-
-        <AIImageGenerator />
 
         <About />
       </main>

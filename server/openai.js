@@ -9,7 +9,7 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: "20mb" }));
 
 const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
@@ -21,7 +21,7 @@ const ai = new GoogleGenAI({
 
 app.post("/api/ask", async (req, res) => {
   try {
-    const { question } = req.body;
+    const { question, attachments = [] } = req.body;
 
     if (!question || !question.trim()) {
       return res.status(400).json({
@@ -29,16 +29,38 @@ app.post("/api/ask", async (req, res) => {
       });
     }
 
-    const response = await ai.models.generateContent({
-      model: "gemini-3.6-flash",
-      contents: `You are LumiAI, a friendly educational AI assistant.
+    if (!Array.isArray(attachments) || attachments.length > 5) {
+      return res.status(400).json({ error: "Please attach up to five files." });
+    }
 
-Answer the student's question clearly and simply.
-Use examples when helpful.
-Keep the explanation appropriate for a student.
+    const supportedTypes = new Set([
+      "image/jpeg", "image/png", "image/webp", "image/heic", "image/heif",
+      "application/pdf", "text/plain", "text/csv", "text/markdown",
+      "audio/wav", "audio/x-wav", "audio/mp3", "audio/mpeg", "audio/aiff",
+      "audio/aac", "audio/ogg", "audio/flac", "audio/webm",
+      "audio/mp4", "audio/m4a",
+    ]);
+    const parts = [{ text: `You are LumiAI, a friendly educational AI assistant.
+
+Answer the student's question clearly and simply. Use examples when helpful. If they attach an image, document, or audio, inspect it and respond to their request. Keep the explanation appropriate for a student.
 
 Student's question:
-${question}`,
+${question.trim()}` }];
+
+    for (const file of attachments) {
+      if (!file || !supportedTypes.has(file.type) || typeof file.data !== "string") {
+        return res.status(400).json({ error: `Lumi can't read that file type yet: ${file?.name || "unknown file"}. Try an image, PDF, text file, or audio recording.` });
+      }
+      const bytes = Buffer.from(file.data, "base64");
+      if (!bytes.length || bytes.length > 12 * 1024 * 1024) {
+        return res.status(400).json({ error: "Each attachment must be under 12 MB." });
+      }
+      parts.push({ inlineData: { mimeType: file.type, data: bytes.toString("base64") } });
+    }
+
+    const response = await ai.models.generateContent({
+      model: "gemini-3.6-flash",
+      contents: [{ role: "user", parts }],
     });
 
     res.json({
