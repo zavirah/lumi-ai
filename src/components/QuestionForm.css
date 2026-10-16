@@ -832,3 +832,146 @@
     gap: 2px;
   }
 }
+
+.question-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.history-toggle {
+  border: 1px solid #eadff0;
+  border-radius: 999px;
+  background: #fff;
+  color: #8e55a5;
+  padding: 8px 12px;
+  font: inherit;
+  font-size: .72rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.chat-history-panel {
+  margin: 0 0 16px;
+  padding: 16px;
+  border: 1px solid #eee5f2;
+  border-radius: 16px;
+  background: #fcf9fd;
+}
+
+.history-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.history-heading strong,
+.history-heading span {
+  display: block;
+}
+
+.history-heading strong {
+  color: #40344a;
+  font-size: .86rem;
+}
+
+.history-heading span {
+  margin-top: 3px;
+  color: #94879b;
+  font-size: .68rem;
+}
+
+.history-heading > button {
+  border: 0;
+  border-radius: 9px;
+  padding: 8px 10px;
+  background: #f1e5f7;
+  color: #8848a4;
+  font: inherit;
+  font-size: .7rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.history-list {
+  display: grid;
+  gap: 7px;
+  max-height: 220px;
+  overflow-y: auto;
+  margin-top: 12px;
+}
+
+.history-item {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  padding: 10px 11px;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+}
+
+.history-item:hover,
+.history-item.selected {
+  border-color: #e4cbed;
+  background: #fffaff;
+}
+
+.history-item strong {
+  overflow: hidden;
+  color: #51445a;
+  font-size: .75rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.history-item span,
+.history-empty {
+  color: #988b9f;
+  font-size: .66rem;
+}
+
+.history-empty {
+  margin: 14px 0 0;
+}
+
+.dark-mode .history-toggle {
+  border-color: #4a3b50;
+  background: #302638;
+  color: #d6a3e6;
+}
+
+.dark-mode .chat-history-panel {
+  border-color: #4a3b50;
+  background: #28202e;
+}
+
+.dark-mode .history-heading strong,
+.dark-mode .history-item strong {
+  color: #e8ddeb;
+}
+
+.dark-mode .history-item {
+  background: #332a38;
+}
+
+.dark-mode .history-item:hover,
+.dark-mode .history-item.selected {
+  border-color: #76528a;
+  background: #3b2c43;
+}
+
+@media (max-width: 540px) {
+  .question-top-actions {
+    gap: 5px;
+  }
+
+  .history-toggle {
+    padding: 7px 9px;
+    font-size: .66rem;
+  }
+}

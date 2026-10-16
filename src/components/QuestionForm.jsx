@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { LuArrowUp, LuBrain, LuBookOpen, LuCamera, LuFileUp, LuImage, LuMic, LuPaperclip, LuSparkles, LuX } from "react-icons/lu";
+import { supabase } from "../lib/supabase";
 import "./QuestionForm.css";
 
 const API = import.meta.env.DEV
@@ -9,11 +10,14 @@ const ACCEPT = "image/jpeg,image/png,image/webp,image/heic,image/heif,audio/wav,
 const MAX_BYTES = 12 * 1024 * 1024;
 const MAX_TOTAL_BYTES = 14 * 1024 * 1024;
 
-function QuestionForm() {
+function QuestionForm({ user }) {
   const [question, setQuestion] = useState("");
   const [mode, setMode] = useState("chat");
   const [files, setFiles] = useState([]);
   const [messages, setMessages] = useState([]);
+  const [conversations, setConversations] = useState([]);
+  const [activeConversation, setActiveConversation] = useState(null);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [recording, setRecording] = useState(false);
@@ -31,6 +35,31 @@ function QuestionForm() {
   const audioFrameRef = useRef(null);
   const recorderRef = useRef(null);
   const chunksRef = useRef([]);
+
+  useEffect(() => {
+    let active = true;
+    supabase.from("conversations").select("id,title,messages,updated_at").order("updated_at", { ascending: false }).limit(40)
+      .then(({ data, error: loadError }) => {
+        if (!active) return;
+        if (loadError) setError("Chat history is not ready yet. Run the included Supabase setup once, then refresh.");
+        else setConversations(data || []);
+      });
+    return () => { active = false; };
+  }, [user.id]);
+
+  useEffect(() => {
+    const onSelect = (event) => {
+      const selected = conversations.find((conversation) => conversation.id === event.detail);
+      if (!selected) return;
+      setActiveConversation(selected.id);
+      setMessages(selected.messages || []);
+      setQuestion(""); setFiles([]); setError(""); setHistoryOpen(false);
+    };
+    const showHistory = () => { setHistoryOpen(true); document.getElementById("ask")?.scrollIntoView({ behavior: "smooth" }); };
+    window.addEventListener("lumi:open-conversation", onSelect);
+    window.addEventListener("lumi:show-history", showHistory);
+    return () => { window.removeEventListener("lumi:open-conversation", onSelect); window.removeEventListener("lumi:show-history", showHistory); };
+  }, [conversations]);
 
   useEffect(() => {
     if (cameraOpen && videoRef.current && cameraStreamRef.current) {
@@ -190,7 +219,8 @@ function QuestionForm() {
     const prompt = question.trim() || (mode === "image" ? "Create an educational visual based on my attachment." : "Please help me understand this attachment.");
     const attached = files;
     const userMessage = { role: "user", text: prompt, files: attached.map((file) => ({ name: file.name, url: file.type.startsWith("image/") ? URL.createObjectURL(file) : "" })) };
-    setMessages((items) => [...items, userMessage]);
+    const pendingMessages = [...messages, userMessage];
+    setMessages(pendingMessages);
     setQuestion(""); setFiles([]); setBusy(true); setError("");
     try {
       let response;
@@ -198,12 +228,23 @@ function QuestionForm() {
         response = await fetch(`${API}/generate-image`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt }) });
       } else {
         const attachments = await Promise.all(attached.map(toData));
-        response = await fetch(`${API}/ask`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question: prompt, attachments }) });
+        const history = messages.slice(-12).map(({ role, text }) => ({ role, text }));
+        response = await fetch(`${API}/ask`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question: prompt, attachments, history, displayName: user.user_metadata?.full_name || "", responseStyle: localStorage.getItem("lumi-reply-style") || "balanced" }) });
       }
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Lumi couldn't complete that request.");
       const assistant = mode === "image" ? { role: "assistant", image: data.image, text: `Here’s your visual for “${prompt}”.` } : { role: "assistant", text: data.answer };
-      setMessages((items) => [...items, assistant]);
+      const completedMessages = [...pendingMessages, assistant];
+      setMessages(completedMessages);
+      const conversationId = activeConversation || crypto.randomUUID();
+      const title = (activeConversation ? conversations.find((item) => item.id === activeConversation)?.title : "") || prompt.slice(0, 64) || "New conversation";
+      const savedMessages = completedMessages.map(({ role, text, files: messageFiles }) => ({ role, text, ...(messageFiles?.length ? { files: messageFiles.map(({ name }) => ({ name })) } : {}) }));
+      const { error: saveError } = await supabase.from("conversations").upsert({ id: conversationId, owner_id: user.id, title, messages: savedMessages, updated_at: new Date().toISOString() });
+      if (saveError) setError("Lumi replied, but this chat could not be saved. Check the Supabase setup and refresh.");
+      else {
+        setActiveConversation(conversationId);
+        setConversations((items) => [{ id: conversationId, title, messages: savedMessages, updated_at: new Date().toISOString() }, ...items.filter((item) => item.id !== conversationId)].slice(0, 40));
+      }
     } catch (err) {
       setMessages((items) => items.filter((_, index) => index !== items.length - 1));
       setError(err.message || "Lumi couldn't respond. Please try again.");
@@ -218,7 +259,8 @@ function QuestionForm() {
     </div>
     <div className="question-area">
       <div className="question-card">
-        <div className="question-top"><div className="question-user"><div className="question-avatar">L</div><div><strong>Ask Lumi</strong><span>Text, images, files &amp; audio</span></div></div><div className="status-pill"><span />{busy ? "Working…" : "Ready"}</div></div>
+        <div className="question-top"><div className="question-user"><div className="question-avatar">L</div><div><strong>Ask Lumi</strong><span>Text, images, files &amp; audio</span></div></div><div className="question-top-actions"><button className="history-toggle" type="button" onClick={() => setHistoryOpen((open) => !open)}>{historyOpen ? "Close history" : `History${conversations.length ? ` · ${conversations.length}` : ""}`}</button><button className="status-pill"><span />{busy ? "Working…" : "Ready"}</button></div></div>
+        {historyOpen && <div className="chat-history-panel"><div className="history-heading"><div><strong>Your conversations</strong><span>Pick up where you left off</span></div><button type="button" onClick={() => { setActiveConversation(null); setMessages([]); setQuestion(""); setFiles([]); setError(""); setHistoryOpen(false); }}>+ New chat</button></div>{conversations.length ? <div className="history-list">{conversations.map((item) => <button type="button" className={`history-item ${item.id === activeConversation ? "selected" : ""}`} key={item.id} onClick={() => { setActiveConversation(item.id); setMessages(item.messages || []); setQuestion(""); setFiles([]); setError(""); setHistoryOpen(false); }}><strong>{item.title}</strong><span>{new Date(item.updated_at).toLocaleDateString()} · {(item.messages || []).length} messages</span></button>)}</div> : <p className="history-empty">Your saved chats will appear here.</p>}</div>}
         <div className="lumi-thread" aria-live="polite">
           {messages.length === 0 && <div className="thread-welcome"><span className="welcome-orb"><LuSparkles /></span><strong>What are you working on?</strong><p>Ask a question or add a file, photo, or voice note.</p><div className="welcome-prompts"><button onClick={() => setQuestion("Explain photosynthesis with a simple analogy")}>Explain a concept</button><button onClick={() => { setMode("image"); setQuestion("Create a clear, colorful educational diagram of the water cycle"); }}>Create a visual</button></div></div>}
           {messages.map((message, index) => <article className={`chat-message ${message.role}`} key={index}><div className="message-avatar">{message.role === "user" ? "Z" : <LuSparkles />}</div><div className="message-content"><strong>{message.role === "user" ? "You" : "Lumi"}</strong>{message.text && <p>{message.text}</p>}{message.files?.map((file, i) => <div className="attachment-chip" key={i}>{file.url && <img src={file.url} alt="" />}<span>{file.name}</span></div>)}{message.image && <img className="chat-generated-image" src={message.image} alt={message.text} />}</div></article>)}

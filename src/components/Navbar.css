@@ -337,3 +337,284 @@
 .dark-mode .profile-menu-item > svg {
   color: #9f91a5;
 }
+
+.settings-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow-y: auto;
+  padding: max(36px, env(safe-area-inset-top)) 20px max(36px, env(safe-area-inset-bottom));
+  background: rgba(29, 20, 37, 0.42);
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+}
+
+.settings-dialog {
+  width: min(100%, 480px);
+  max-height: min(calc(100vh - 72px), 760px);
+  max-height: min(calc(100dvh - 72px), 760px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 26px;
+  border: 1px solid #eee4f2;
+  border-radius: 24px;
+  background: #fff;
+  box-shadow: 0 28px 90px rgba(39, 24, 51, 0.24);
+  color: #433849;
+  animation: profileMenuIn 0.2s ease-out;
+}
+
+.settings-dialog-header {
+  position: sticky;
+  top: -26px;
+  z-index: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin: -26px -26px 19px;
+  padding: 26px 26px 12px;
+  background: #fff;
+}
+
+.settings-eyebrow {
+  color: #a65cca;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+}
+
+.settings-dialog-header h2 {
+  margin: 5px 0 0;
+  color: #30263a;
+  font-size: 1.5rem;
+  letter-spacing: -0.6px;
+}
+
+.settings-close {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: #f6f0f8;
+  color: #73647a;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.settings-section {
+  padding: 16px 0;
+  border-top: 1px solid #f0e9f2;
+}
+
+.settings-section h3 {
+  margin: 0;
+  color: #483e4e;
+  font-size: 0.82rem;
+}
+
+.settings-section > p {
+  margin: 5px 0 12px;
+  color: #93899a;
+  font-size: 0.7rem;
+}
+
+.settings-account {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-top: 12px;
+}
+
+.settings-account-avatar {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: #f2e5f8;
+  color: #a25bc3;
+}
+
+.settings-account strong,
+.settings-account div > span {
+  display: block;
+}
+
+.settings-account strong {
+  color: #55485c;
+  font-size: 0.75rem;
+}
+
+.settings-account div > span {
+  margin-top: 3px;
+  color: #958b9b;
+  font-size: 0.68rem;
+}
+
+.settings-choice-row {
+  display: flex;
+  gap: 8px;
+}
+
+.settings-choice {
+  min-width: 84px;
+  border: 1px solid #e9dfee;
+  border-radius: 10px;
+  padding: 8px 14px;
+  background: #fff;
+  color: #726579;
+  font: inherit;
+  font-size: 0.7rem;
+  cursor: pointer;
+}
+
+.settings-choice.selected {
+  border-color: #c68bdd;
+  background: #fbf5fd;
+  color: #8e4ba9;
+  font-weight: 750;
+}
+
+.settings-style-list {
+  display: grid;
+  gap: 7px;
+}
+
+.settings-style-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  border: 1px solid #eee7f0;
+  border-radius: 12px;
+  padding: 10px 11px;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+}
+
+.settings-style-option.selected {
+  border-color: #c68bdd;
+  background: #fcf7fe;
+}
+
+.settings-radio {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 15px;
+  border: 1.5px solid #d1c5d7;
+  border-radius: 50%;
+}
+
+.settings-style-option.selected .settings-radio {
+  border: 5px solid #ae62cd;
+}
+
+.settings-style-option strong,
+.settings-style-option small {
+  display: block;
+}
+
+.settings-style-option strong {
+  color: #574a60;
+  font-size: 0.7rem;
+}
+
+.settings-style-option small {
+  margin-top: 3px;
+  color: #988d9d;
+  font-size: 0.63rem;
+}
+
+.settings-privacy {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  border-radius: 12px;
+  padding: 11px;
+  background: #f9f4fb;
+  color: #86738f;
+  font-size: 0.65rem;
+  line-height: 1.5;
+}
+
+.settings-privacy svg {
+  flex: 0 0 15px;
+  color: #a35bc4;
+}
+
+.dark-mode .settings-dialog {
+  border-color: #4a3b50;
+  background: #2b2231;
+  color: #eee5f1;
+}
+
+.dark-mode .settings-dialog-header h2,
+.dark-mode .settings-section h3,
+.dark-mode .settings-account strong,
+.dark-mode .settings-style-option strong {
+  color: #eee4f1;
+}
+
+.dark-mode .settings-dialog-header {
+  background: #2b2231;
+}
+
+.dark-mode .settings-section {
+  border-color: #493d50;
+}
+
+.dark-mode .settings-close,
+.dark-mode .settings-account-avatar,
+.dark-mode .settings-privacy {
+  background: #3a2d42;
+  color: #d3b9df;
+}
+
+.dark-mode .settings-choice,
+.dark-mode .settings-style-option {
+  border-color: #51445a;
+  background: #332a39;
+  color: #d3c5d9;
+}
+
+.dark-mode .settings-choice.selected,
+.dark-mode .settings-style-option.selected {
+  border-color: #9c69b2;
+  background: #3c2c46;
+  color: #e9c8f2;
+}
+
+@media (max-width: 520px) {
+  .settings-backdrop {
+    padding-right: 14px;
+    padding-left: 14px;
+  }
+
+  .settings-dialog {
+    padding: 21px;
+    border-radius: 20px;
+  }
+
+  .settings-dialog-header {
+    top: -21px;
+    margin: -21px -21px 16px;
+    padding: 21px 21px 10px;
+  }
+}
+
+@media (max-height: 700px) {
+  .settings-backdrop {
+    align-items: flex-start;
+  }
+
+  .settings-dialog {
+    max-height: calc(100vh - 56px);
+    max-height: calc(100dvh - 56px);
+  }
+}

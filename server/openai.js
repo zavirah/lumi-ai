@@ -21,7 +21,7 @@ const ai = new GoogleGenAI({
 
 app.post("/api/ask", async (req, res) => {
   try {
-    const { question, attachments = [] } = req.body;
+    const { question, attachments = [], history = [], displayName = "", responseStyle = "balanced" } = req.body;
 
     if (!question || !question.trim()) {
       return res.status(400).json({
@@ -33,6 +33,17 @@ app.post("/api/ask", async (req, res) => {
       return res.status(400).json({ error: "Please attach up to five files." });
     }
 
+    if (!Array.isArray(history) || history.length > 12) {
+      return res.status(400).json({ error: "Please keep the recent chat history to twelve messages or fewer." });
+    }
+
+    const styleInstructions = {
+      balanced: "Use a natural balance of warmth and detail.",
+      warm: "Use a little extra warmth and encouragement, while staying sincere and avoiding exaggerated praise.",
+      concise: "Keep answers concise and practical, while remaining kind and emotionally attentive.",
+    };
+    const selectedStyle = styleInstructions[responseStyle] || styleInstructions.balanced;
+
     const supportedTypes = new Set([
       "image/jpeg", "image/png", "image/webp", "image/heic", "image/heif",
       "application/pdf", "text/plain", "text/csv", "text/markdown",
@@ -40,12 +51,10 @@ app.post("/api/ask", async (req, res) => {
       "audio/aac", "audio/ogg", "audio/flac", "audio/webm",
       "audio/mp4", "audio/m4a",
     ]);
-    const parts = [{ text: `You are LumiAI, a friendly educational AI assistant.
-
-Answer the student's question clearly and simply. Use examples when helpful. If they attach an image, document, or audio, inspect it and respond to their request. Keep the explanation appropriate for a student.
-
-Student's question:
-${question.trim()}` }];
+    const safeHistory = history
+      .filter((message) => message && ["user", "assistant"].includes(message.role) && typeof message.text === "string")
+      .map((message) => ({ role: message.role === "assistant" ? "model" : "user", parts: [{ text: message.text.slice(0, 6000) }] }));
+    const parts = [{ text: question.trim() }];
 
     for (const file of attachments) {
       if (!file || !supportedTypes.has(file.type) || typeof file.data !== "string") {
@@ -60,7 +69,17 @@ ${question.trim()}` }];
 
     const response = await ai.models.generateContent({
       model: "gemini-3.6-flash",
-      contents: [{ role: "user", parts }],
+      contents: [...safeHistory, { role: "user", parts }],
+      config: {
+        systemInstruction: `You are Lumi, a thoughtful, emotionally aware learning and life companion. The current user's name is ${String(displayName).slice(0, 80) || "not provided"}.
+
+Keep continuity: use the prior messages to understand references and remember what the person has already told you in this conversation. Do not introduce yourself, say "Hi, I'm Lumi", or repeat a greeting in every answer. Reply directly and naturally; greet only when it fits a genuinely new conversation.
+
+Adapt to the situation. For school, explain clearly in manageable steps and encourage learning. For a breakup or another painful experience, listen first, acknowledge the feeling without minimizing it, then ask whether they want comfort, perspective, or practical next steps when that would help. For hunger or urgent practical needs, respond warmly and focus on immediate realistic options and nearby trusted support; do not lecture or shame. For other topics, match the user's tone while staying kind, grounded, and useful.
+
+Do not pretend to be a therapist or make diagnoses. If someone describes imminent danger or intent to harm themselves or someone else, be calm and supportive, encourage immediate contact with a trusted person and local emergency/crisis support. Be honest about uncertainty. When files or media are attached, inspect them and answer the request about them. Keep explanations appropriate for a student without assuming every conversation is about school.`
+          + `\n\nThe user's reply-style preference is: ${selectedStyle}`
+      },
     });
 
     res.json({

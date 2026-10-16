@@ -2,13 +2,15 @@ import Navbar from "./components/Navbar";
 import Hero from "./components/Hero";
 import { FeatureCard, features } from "./components/FeatureCard";
 import QuestionForm from "./components/QuestionForm";
+import CourseHub from "./components/CourseHub";
 import About from "./components/About";
 import { LuSparkles } from "react-icons/lu";
+import { WelcomeGate } from "./components/WelcomeGate";
 
-function App() {
+function LumiApp({ session, signOut }) {
   return (
     <>
-      <Navbar />
+      <Navbar user={session.user} signOut={signOut} />
 
       <main>
         <Hero />
@@ -44,12 +46,18 @@ function App() {
           </div>
         </section>
 
-        <QuestionForm />
+        <CourseHub />
+
+        <QuestionForm user={session.user} />
 
         <About />
       </main>
     </>
   );
+}
+
+function App() {
+  return <WelcomeGate>{({ session, signOut }) => <LumiApp session={session} signOut={signOut} />}</WelcomeGate>;
 }
 
 export default App;
