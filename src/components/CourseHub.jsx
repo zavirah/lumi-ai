@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   LuArrowLeft,
   LuArrowRight,
@@ -12,10 +12,13 @@ import {
   LuSparkles,
   LuX,
 } from "react-icons/lu";
+import { supabase } from "../lib/supabase";
 import "./CourseHub.css";
 
 export const COURSE_STORAGE_KEY = "lumi-course-library-v1";
 export const COURSE_UPDATE_EVENT = "lumi:courses-updated";
+const COURSE_UPDATED_AT_KEY = `${COURSE_STORAGE_KEY}-updated-at`;
+const COURSE_OWNER_KEY = `${COURSE_STORAGE_KEY}-owner`;
 
 const API = import.meta.env.DEV
   ? "http://localhost:3001/api"
@@ -65,13 +68,22 @@ const starterCourses = [
   },
 ];
 
-function readCourses() {
+function readCourses(userId) {
   try {
+    const cachedOwner = localStorage.getItem(COURSE_OWNER_KEY);
+    if (cachedOwner && cachedOwner !== userId) return starterCourses;
     const stored = JSON.parse(localStorage.getItem(COURSE_STORAGE_KEY) || "null");
     return Array.isArray(stored) ? stored : starterCourses;
   } catch {
     return starterCourses;
   }
+}
+
+function mergeCourseLibraries(primaryCourses, secondaryCourses) {
+  const primary = Array.isArray(primaryCourses) ? primaryCourses : [];
+  const secondary = Array.isArray(secondaryCourses) ? secondaryCourses : [];
+  const primaryIds = new Set(primary.map((course) => course.id));
+  return [...primary, ...secondary.filter((course) => !primaryIds.has(course.id))];
 }
 
 function progressOf(course) {
@@ -111,8 +123,10 @@ function cleanPlan(answer) {
   }));
 }
 
-function CourseHub() {
-  const [courses, setCourses] = useState(readCourses);
+function CourseHub({ user }) {
+  const [courses, setCourses] = useState(() => readCourses(user.id));
+  const [progressLoaded, setProgressLoaded] = useState(false);
+  const [progressSync, setProgressSync] = useState("loading");
   const [filter, setFilter] = useState("All courses");
   const [query, setQuery] = useState("");
   const [activeCourseId, setActiveCourseId] = useState(null);
@@ -125,11 +139,80 @@ function CourseHub() {
   const [goal, setGoal] = useState("");
   const [lessonTitles, setLessonTitles] = useState("");
   const [files, setFiles] = useState([]);
+  const saveQueueRef = useRef(Promise.resolve());
 
   useEffect(() => {
+    let active = true;
+
+    const loadProgress = async () => {
+      const { data, error: loadError } = await supabase
+        .from("course_progress")
+        .select("courses,updated_at")
+        .eq("owner_id", user.id)
+        .maybeSingle();
+
+      if (!active) return;
+      if (loadError) {
+        setProgressSync("local-only");
+        setProgressLoaded(true);
+        return;
+      }
+
+      const localCourses = readCourses(user.id);
+      if (!data) {
+        setCourses(localCourses);
+      } else {
+        const cachedOwner = localStorage.getItem(COURSE_OWNER_KEY);
+        const localBelongsToUser = !cachedOwner || cachedOwner === user.id;
+        const localUpdatedAt = localBelongsToUser
+          ? Number(localStorage.getItem(COURSE_UPDATED_AT_KEY)) || 0
+          : 0;
+        const remoteUpdatedAt = Date.parse(data.updated_at) || 0;
+        const localIsNewer = localUpdatedAt > remoteUpdatedAt;
+        const preferred = localIsNewer ? localCourses : data.courses;
+        const other = localIsNewer ? data.courses : localCourses;
+        setCourses(mergeCourseLibraries(preferred, other));
+      }
+      setProgressSync("saved");
+      setProgressLoaded(true);
+    };
+
+    loadProgress().catch(() => {
+      if (!active) return;
+      setProgressSync("local-only");
+      setProgressLoaded(true);
+    });
+
+    return () => { active = false; };
+  }, [user.id]);
+
+  useEffect(() => {
+    if (!progressLoaded) return undefined;
+
+    const updatedAt = new Date().toISOString();
     localStorage.setItem(COURSE_STORAGE_KEY, JSON.stringify(courses));
+    localStorage.setItem(COURSE_OWNER_KEY, user.id);
+    localStorage.setItem(COURSE_UPDATED_AT_KEY, String(Date.parse(updatedAt)));
     window.dispatchEvent(new Event(COURSE_UPDATE_EVENT));
-  }, [courses]);
+    setProgressSync("saving");
+    const timeout = window.setTimeout(() => {
+      const snapshot = courses;
+      saveQueueRef.current = saveQueueRef.current
+        .catch(() => {})
+        .then(async () => {
+          const { error: saveError } = await supabase.from("course_progress").upsert({
+            owner_id: user.id,
+            courses: snapshot,
+            updated_at: updatedAt,
+          });
+          if (saveError) throw saveError;
+          setProgressSync("saved");
+        })
+        .catch(() => setProgressSync("local-only"));
+    }, 500);
+
+    return () => window.clearTimeout(timeout);
+  }, [courses, progressLoaded, user.id]);
 
   const activeCourse = courses.find((course) => course.id === activeCourseId);
   const activeLesson = activeCourse?.lessons.find((lesson) => lesson.id === activeLessonId);
@@ -271,6 +354,9 @@ function CourseHub() {
             <div className="course-stat"><span className="course-stat-icon violet"><LuBookOpen /></span><div><strong>{courses.length}</strong><span>Courses in your library</span></div></div>
             <div className="course-stat"><span className="course-stat-icon peach"><LuSparkles /></span><div><strong>{inProgressCount}</strong><span>In progress</span></div></div>
             <div className="course-stat"><span className="course-stat-icon green"><LuCircleCheck /></span><div><strong>{totalCompleted}<small>/{totalLessons}</small></strong><span>Lessons completed</span></div></div>
+          </div>
+          <div className={`course-sync-status ${progressSync === "local-only" ? "needs-sync" : ""}`} role="status">
+            {progressSync === "loading" ? "Loading your saved progress…" : progressSync === "saving" ? "Saving progress to your account…" : progressSync === "local-only" ? "Account sync is unavailable; progress is still saved on this device." : "Your course progress is synced to your account."}
           </div>
 
           <div className="course-toolbar">

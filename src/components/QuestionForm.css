@@ -614,6 +614,24 @@
   cursor: pointer;
 }
 
+.camera-dialog-header .camera-switch {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: auto;
+  min-width: 86px;
+  padding: 0 10px;
+  border: 1px solid #eadfee;
+  font-size: .72rem;
+  font-weight: 700;
+}
+
+.camera-dialog-header .camera-switch:disabled {
+  cursor: wait;
+  opacity: .7;
+}
+
 .camera-dialog video {
   display: block;
   width: 100%;
@@ -623,10 +641,20 @@
   background: #17131a;
 }
 
+.camera-dialog video.camera-preview-mirrored {
+  transform: scaleX(-1);
+}
+
 .camera-dialog>p {
   margin: 10px 0;
   color: #817887;
   font-size: .78rem;
+}
+
+.camera-dialog>p.camera-notice {
+  margin-top: 8px;
+  color: #a35b4d;
+  font-size: .72rem;
 }
 
 .camera-dialog-actions {
@@ -659,8 +687,16 @@
   color: #d0bfd6;
 }
 
+.dark-mode .camera-dialog-header .camera-switch {
+  border-color: #594763;
+}
+
 .dark-mode .camera-dialog>p {
   color: #aa9dac;
+}
+
+.dark-mode .camera-dialog>p.camera-notice {
+  color: #efb2a0;
 }
 
 .dark-mode .camera-dialog-actions>button:first-child {

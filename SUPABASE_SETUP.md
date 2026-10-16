@@ -10,6 +10,8 @@ Create a project at [supabase.com](https://supabase.com). In Project Settings â†
 
 Open the Supabase SQL Editor, paste the contents of `supabase/schema.sql`, and run it. The table enables row-level security so each account can only read and change its own chats.
 
+To sync class courses and lesson progress, also run `supabase/course_progress.sql` once. It creates a separate per-user progress table with row-level security. Existing progress saved in this browser is copied into the account the next time Lumi loads it.
+
 ## 3. Configure local development
 
 Add these values to the root `.env` file (the file is ignored by Git):

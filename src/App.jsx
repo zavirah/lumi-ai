@@ -46,7 +46,7 @@ function LumiApp({ session, signOut }) {
           </div>
         </section>
 
-        <CourseHub />
+        <CourseHub key={session.user.id} user={session.user} />
 
         <QuestionForm user={session.user} />
 

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { LuArrowUp, LuBrain, LuBookOpen, LuCamera, LuFileUp, LuImage, LuMic, LuPaperclip, LuSparkles, LuX } from "react-icons/lu";
+import { LuArrowUp, LuBrain, LuBookOpen, LuCamera, LuFileUp, LuImage, LuMic, LuPaperclip, LuSparkles, LuSwitchCamera, LuX } from "react-icons/lu";
 import { supabase } from "../lib/supabase";
 import "./QuestionForm.css";
 
@@ -22,6 +22,10 @@ function QuestionForm({ user }) {
   const [error, setError] = useState("");
   const [recording, setRecording] = useState(false);
   const [cameraOpen, setCameraOpen] = useState(false);
+  const [cameraFacingMode, setCameraFacingMode] = useState("environment");
+  const [cameraMirrored, setCameraMirrored] = useState(false);
+  const [cameraSwitching, setCameraSwitching] = useState(false);
+  const [cameraNotice, setCameraNotice] = useState("");
   const [cameraOffset, setCameraOffset] = useState({ x: 0, y: 0 });
   const [recordingSeconds, setRecordingSeconds] = useState(0);
   const [audioBars, setAudioBars] = useState(() => Array(20).fill(0.05));
@@ -31,10 +35,16 @@ function QuestionForm({ user }) {
   const cameraDialogRef = useRef(null);
   const cameraDragRef = useRef(null);
   const cameraStreamRef = useRef(null);
+  const cameraRequestRef = useRef(0);
   const audioContextRef = useRef(null);
   const audioFrameRef = useRef(null);
   const recorderRef = useRef(null);
   const chunksRef = useRef([]);
+
+  const updateCameraOrientation = (stream, requestedMode) => {
+    const actualMode = stream?.getVideoTracks?.()[0]?.getSettings?.().facingMode;
+    setCameraMirrored(actualMode ? actualMode === "user" : requestedMode === "user");
+  };
 
   useEffect(() => {
     let active = true;
@@ -66,9 +76,10 @@ function QuestionForm({ user }) {
       videoRef.current.srcObject = cameraStreamRef.current;
       videoRef.current.play().catch(() => {});
     }
-  }, [cameraOpen]);
+  }, [cameraOpen, cameraFacingMode]);
 
   useEffect(() => () => {
+    cameraRequestRef.current += 1;
     cameraStreamRef.current?.getTracks().forEach((track) => track.stop());
     if (audioFrameRef.current) cancelAnimationFrame(audioFrameRef.current);
     audioContextRef.current?.close().catch(() => {});
@@ -87,18 +98,74 @@ function QuestionForm({ user }) {
     }
     try {
       cameraStreamRef.current = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: "environment" } },
+        video: { facingMode: { ideal: cameraFacingMode } },
         audio: false,
       });
+      updateCameraOrientation(cameraStreamRef.current, cameraFacingMode);
       setCameraOpen(true);
       setCameraOffset({ x: 0, y: 0 });
+      setCameraNotice("");
       setError("");
     } catch {
       setError("Camera access was blocked or unavailable. You can choose a photo file instead.");
     }
   };
 
+  const switchCamera = async () => {
+    if (!cameraStreamRef.current || cameraSwitching) return;
+
+    const requestId = cameraRequestRef.current + 1;
+    cameraRequestRef.current = requestId;
+    const previousMode = cameraFacingMode;
+    const nextMode = previousMode === "environment" ? "user" : "environment";
+    setCameraSwitching(true);
+    setCameraNotice("");
+    cameraStreamRef.current.getTracks().forEach((track) => track.stop());
+    cameraStreamRef.current = null;
+
+    try {
+      const nextStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: nextMode } },
+        audio: false,
+      });
+      if (cameraRequestRef.current !== requestId) {
+        nextStream.getTracks().forEach((track) => track.stop());
+        return;
+      }
+      cameraStreamRef.current = nextStream;
+      updateCameraOrientation(nextStream, nextMode);
+      setCameraFacingMode(nextMode);
+      if (videoRef.current) {
+        videoRef.current.srcObject = nextStream;
+        videoRef.current.play().catch(() => {});
+      }
+    } catch {
+      try {
+        const restoredStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: previousMode } },
+          audio: false,
+        });
+        if (cameraRequestRef.current !== requestId) {
+          restoredStream.getTracks().forEach((track) => track.stop());
+          return;
+        }
+        cameraStreamRef.current = restoredStream;
+        updateCameraOrientation(restoredStream, previousMode);
+        if (videoRef.current) {
+          videoRef.current.srcObject = restoredStream;
+          videoRef.current.play().catch(() => {});
+        }
+        setCameraNotice("That camera isn’t available, so Lumi kept the current view.");
+      } catch {
+        setCameraNotice("Lumi couldn’t reconnect to the camera. Close this window and try again.");
+      }
+    } finally {
+      setCameraSwitching(false);
+    }
+  };
+
   const closeCamera = () => {
+    cameraRequestRef.current += 1;
     cameraStreamRef.current?.getTracks().forEach((track) => track.stop());
     cameraStreamRef.current = null;
     cameraDragRef.current = null;
@@ -273,7 +340,7 @@ function QuestionForm({ user }) {
         {recording && <div className="recording-panel" role="status" aria-live="polite"><div className="recording-copy"><span className="recording-pulse" /><div><strong>Recording your voice</strong><span>Speak now · {formatRecordingTime(recordingSeconds)}</span></div></div><div className="recording-meter" aria-label="Live microphone level">{audioBars.map((level, index) => <span key={index} style={{ height: `${Math.max(4, level * 30)}px` }} />)}</div></div>}
         <div className="question-footer"><div className="question-options"><input ref={inputRef} type="file" accept={ACCEPT} multiple hidden onChange={(e) => { addFiles(e.target.files); e.target.value = ""; }} /><input ref={cameraRef} type="file" accept="image/*" capture="environment" hidden onChange={(e) => { addFiles(e.target.files); e.target.value = ""; }} /><button type="button" onClick={() => inputRef.current?.click()} title="Attach a file"><LuPaperclip /><span>Attach</span></button><button type="button" onClick={openCamera} title="Take a photo"><LuCamera /><span>Photo</span></button><button type="button" className={recording ? "recording" : ""} onClick={toggleRecording} title={recording ? "Stop recording" : "Record audio"}><LuMic /><span>{recording ? "Stop" : "Voice"}</span></button><button type="button" onClick={() => setQuestion("Summarize the key ideas and give me a quick study guide.")} title="Summarize"><LuBookOpen /><span>Study guide</span></button></div><button className="ask-button" type="button" onClick={submit} disabled={busy || (!question.trim() && files.length === 0)}><span>{busy ? "Working…" : mode === "image" ? "Create" : "Send"}</span><LuArrowUp /></button></div>
         <p className="composer-note">Up to 5 files · 12 MB each · Shift + Enter for a new line</p>
-        {cameraOpen && <div className="camera-overlay" role="dialog" aria-modal="true" aria-label="Take a photo"><div ref={cameraDialogRef} className="camera-dialog" style={{ transform: `translate(${cameraOffset.x}px, ${cameraOffset.y}px)` }}><div className="camera-dialog-header" onPointerDown={startCameraDrag} onPointerMove={moveCamera} onPointerUp={() => { cameraDragRef.current = null; }} onPointerCancel={() => { cameraDragRef.current = null; }}><div><span className="camera-kicker">LUMI CAMERA · DRAG TO MOVE</span><strong>Take a photo</strong></div><button type="button" onClick={closeCamera} aria-label="Close camera"><LuX /></button></div><video ref={videoRef} autoPlay playsInline muted /><p>Position your photo in the frame, then capture it.</p><div className="camera-dialog-actions"><button className="camera-cancel" type="button" onClick={closeCamera}>Cancel</button><button type="button" className="ask-button camera-capture" onClick={capturePhoto}><LuCamera /> Take photo</button></div></div></div>}
+        {cameraOpen && <div className="camera-overlay" role="dialog" aria-modal="true" aria-label="Take a photo"><div ref={cameraDialogRef} className="camera-dialog" style={{ transform: `translate(${cameraOffset.x}px, ${cameraOffset.y}px)` }}><div className="camera-dialog-header" onPointerDown={startCameraDrag} onPointerMove={moveCamera} onPointerUp={() => { cameraDragRef.current = null; }} onPointerCancel={() => { cameraDragRef.current = null; }}><div><span className="camera-kicker">LUMI CAMERA · DRAG TO MOVE</span><strong>Take a photo</strong></div><button type="button" className="camera-switch" onClick={switchCamera} disabled={cameraSwitching} aria-label={`Switch to ${cameraFacingMode === "environment" ? "front" : "rear"} camera`} title={`Switch to ${cameraFacingMode === "environment" ? "front" : "rear"} camera`}><LuSwitchCamera /><span>{cameraSwitching ? "Switching…" : cameraFacingMode === "environment" ? "Front" : "Rear"}</span></button><button type="button" onClick={closeCamera} aria-label="Close camera"><LuX /></button></div><video ref={videoRef} className={cameraMirrored ? "camera-preview-mirrored" : undefined} autoPlay playsInline muted /><p>Position your photo in the frame, then capture it.</p>{cameraNotice && <p className="camera-notice" role="status">{cameraNotice}</p>}<div className="camera-dialog-actions"><button className="camera-cancel" type="button" onClick={closeCamera}>Cancel</button><button type="button" className="ask-button camera-capture" onClick={capturePhoto}><LuCamera /> Take photo</button></div></div></div>}
       </div>
       <div className="suggestions"><span>Quick start:</span><button onClick={() => setQuestion("Explain recursion simply")}>Explain recursion simply</button><button onClick={() => setQuestion("Give me five quiz questions about cell biology")}>Quiz me on a topic</button></div>
     </div>

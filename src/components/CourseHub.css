@@ -103,6 +103,24 @@
   margin-bottom: 34px;
 }
 
+.course-sync-status {
+  margin: -22px 0 23px;
+  color: #7c7182;
+  font-size: 0.72rem;
+}
+
+.course-sync-status.needs-sync {
+  color: #a15e4e;
+}
+
+.dark-mode .course-sync-status {
+  color: #b7aabd;
+}
+
+.dark-mode .course-sync-status.needs-sync {
+  color: #efb2a0;
+}
+
 .course-stat {
   display: flex;
   min-height: 82px;
